@@ -1,0 +1,208 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Turbonomic External API",
+    "description": "REST API to access the Turbonomic External API functionality.",
+    "version": "v3"
+  },
+  "servers": [
+    {
+      "url": "https://sales1.demo.turbonomic.com/vmturbo/rest"
+    }
+  ],
+  "security": [
+    {
+      "turbonomicAuth": [
+        "role:SITE_ADMIN"
+      ]
+    }
+  ],
+  "paths": {
+    "/parking/policies": {
+      "post": {
+        "summary": "Create Parking Policy (Start/Stop Automation)",
+        "description": "Creates a new policy to enforce parking schedules (suspend/resume) on specific infrastructure resources. Use this to attach a schedule (via timespanScheduleUuid) to targets defined by the criteria list.",
+        "operationId": "addPolicy",
+        "requestBody": {
+          "description": "The ParkingPolicyApiDTO representing the policy to add.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "displayName",
+                  "impacts",
+                  "level",
+                  "criteriaList"
+                ],
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "description": "Name of the policy. Cannot be blank."
+                  },
+                  "className": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "type": "string",
+                    "description": "Specifies the level at which the policy is applicable.",
+                    "enum": [
+                      "GLOBAL",
+                      "CLOUD_PROVIDER",
+                      "ACCOUNT",
+                      "RESOURCE_GROUP",
+                      "DATACENTER",
+                      "TARGET"
+                    ]
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "description": "Priority is used to identify the applicable priority if there are multiple policies at same level (1 is highest).",
+                    "format": "int32",
+                    "default": 1
+                  },
+                  "impacts": {
+                    "type": "object",
+                    "required": [
+                      "attachSchedule"
+                    ],
+                    "properties": {
+                      "attachSchedule": {
+                        "type": "object",
+                        "required": [
+                          "timespanScheduleUuid"
+                        ],
+                        "properties": {
+                          "timespanScheduleUuid": {
+                            "type": "string",
+                            "description": "The UUID of the Schedule to be attached."
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "description": "Name of the schedule (for reference)."
+                          }
+                        }
+                      },
+                      "restrictUnparkable": {
+                        "type": "boolean",
+                        "description": "If true, enforces parking even if marked unparkable.",
+                        "default": false
+                      }
+                    }
+                  },
+                  "scopes": {
+                    "type": "array",
+                    "description": "List of scope object to which the parking policy is applicable, like details of account for account level policies.",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "uuid"
+                      ],
+                      "properties": {
+                        "uuid": {
+                          "type": "string",
+                          "description": "UUID of the Target Group or Account."
+                        },
+                        "displayName": {
+                          "type": "string",
+                          "description": "Name of the scope (optional)."
+                        },
+                        "className": {
+                          "type": "string",
+                          "description": "Class of the scope (e.g., Group)."
+                        }
+                      }
+                    }
+                  },
+                  "criteriaList": {
+                    "type": "array",
+                    "description": "List of filters to get the desired the entities to which the policy is applicable.",
+                    "items": {
+                      "required": [
+                        "caseSensitive",
+                        "expType",
+                        "expVal",
+                        "filterType"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "filterType": {
+                          "type": "string",
+                          "description": "The filter key. Use 'vmsByName' for VMs, 'pmsByName' for Hosts, 'storageByName' for Storage, or 'vmsByTag' for Tags.",
+                          "example": "vmsByName"
+                        },
+                        "expType": {
+                          "type": "string",
+                          "description": "Type of comparator used while building a filter, the allowable values are 'EQ', 'NEQ', 'RXEQ', 'RXNEQ' for strings, 'EQ', 'NEQ', 'GT', 'LT', 'GTE', 'LTE' for numbers'EX', 'NEX' for inclusion in a set of options",
+                          "enum": [
+                            "EQ",
+                            "NEQ",
+                            "GT",
+                            "LT",
+                            "GTE",
+                            "LTE",
+                            "RXEQ",
+                            "RXNEQ",
+                            "EX",
+                            "NEX"
+                          ]
+                        },
+                        "expVal": {
+                          "type": "string",
+                          "description": "The value to match. Can be a regex (e.g. '.*dev.*') or exact name.",
+                          "example": ".*development.*"
+                        },
+                        "caseSensitive": {
+                          "type": "boolean",
+                          "description": "Whether the regex is case sensitive",
+                          "default": false
+                        },
+                        "entityType": {
+                          "type": "string",
+                          "description": "Entity type for the filter (e.g. VirtualMachine)."
+                        },
+                        "singleLine": {
+                          "type": "boolean",
+                          "description": "Whether the regex dot matches all characters including line break characters. Defaults to false.",
+                          "default": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "turbonomicAuth": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "tokenUrl": "https://sales1.demo.turbonomic.com/oauth2/token",
+            "scopes": {
+              "role:SITE_ADMIN": "Escopo de admin"
+            }
+          }
+        }
+      }
+    }
+  }
+}
